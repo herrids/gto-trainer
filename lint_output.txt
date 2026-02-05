@@ -1,0 +1,40 @@
+
+/Users/ferdinandhoske/sihu/gto-trainer/app/page.tsx
+  24:58  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  25:44  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  48:14  warning  'err' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+  76:42  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/ferdinandhoske/sihu/gto-trainer/app/page.tsx:76:42
+  74 |   };
+  75 |
+> 76 |   useEffect(() => { if (view === 'game') generateQuestion(); }, [view]);
+     |                                          ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  77 |
+  78 |   return (
+  79 |     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 font-sans text-slate-900 dark:text-slate-100 transition-colors">  react-hooks/set-state-in-effect
+
+/Users/ferdinandhoske/sihu/gto-trainer/components/TrainerTable.tsx
+   9:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  10:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  71:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/ferdinandhoske/sihu/gto-trainer/lib/poker-data.ts
+  24:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/ferdinandhoske/sihu/gto-trainer/lib/poker-utils.ts
+   1:24  warning  'POS_ORDER' is defined but never used  @typescript-eslint/no-unused-vars
+   1:42  warning  'SUITS' is defined but never used      @typescript-eslint/no-unused-vars
+  16:14  warning  'err' is defined but never used        @typescript-eslint/no-unused-vars
+
+/Users/ferdinandhoske/sihu/gto-trainer/lib/utils.ts
+  8:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 12 problems (8 errors, 4 warnings)
+
