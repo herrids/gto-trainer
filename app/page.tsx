@@ -11,18 +11,17 @@ import { TrainerTable } from '@/components/TrainerTable';
 import { POS_ORDER, POSITION_NAMES, RANKS, SUITS } from '@/lib/poker-data';
 import { getHandAction } from '@/lib/poker-utils';
 import { fetchWithRetry } from '@/lib/utils';
-import { SYSTEM_PROMPT, generateAnalysisPrompt } from '@/lib/prompts';
 
 const App = () => {
   const [view, setView] = useState('reference');
   const [position, setPosition] = useState('BTN');
   const [situation, setSituation] = useState('RFI');
   const [selectedHandForAi, setSelectedHandForAi] = useState<string | null>(null);
-  
+
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [analysisLevel, setAnalysisLevel] = useState('beginner');
-  const [model, setModel] = useState(process.env.NEXT_PUBLIC_OPENROUTER_MODEL || "google/gemini-3-flash-preview");
+  const [model, setModel] = useState("google/gemini-3-flash-preview");
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiExplanation, setAiExplanation] = useState("");
@@ -35,54 +34,36 @@ const App = () => {
     const effectivePos = contextPos || position;
     const effectiveSit = contextSit || situation;
     setSelectedHandForAi(handValue);
-    
-    let sitLabel = effectiveSit === 'LIMPERS' ? 'Facing Limpers' : effectiveSit === 'RFI' ? 'Raise First In' : 'Facing a Raise';
-    if (effectiveSit === 'LIMPERS' && contextLimperPos) {
-        sitLabel = `Facing Limper in ${contextLimperPos}`;
-    }
 
-    const actionLabel = actionValue === '3bet' ? '3-Bet/Raise' : actionValue.charAt(0).toUpperCase() + actionValue.slice(1);
-
-
-    const prompt = generateAnalysisPrompt({
-        hand: handValue,
-        positionName: POSITION_NAMES[effectivePos],
-        situationLabel: sitLabel,
-        actionLabel: actionLabel,
-        analysisLevel: analysisLevel
-    });
-    
     setAiLoading(true);
     setAiExplanation("");
 
-    const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-    if (!apiKey) {
-      setAiExplanation("Configuration Error: NEXT_PUBLIC_OPENROUTER_API_KEY is missing.");
-      setAiLoading(false);
-      return;
-    }
-
     try {
-      const result = await fetchWithRetry("https://openrouter.ai/api/v1/chat/completions", {
+      const result = await fetchWithRetry("/api/ai-analysis", {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
           'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
           'X-Title': 'GTO Trainer'
         },
-        body: JSON.stringify({ 
-          model: model,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: prompt }
-          ]
+        body: JSON.stringify({
+          hand: handValue,
+          positionName: POSITION_NAMES[effectivePos],
+          situationLabel: effectiveSit,
+          actionLabel: actionValue,
+          analysisLevel: analysisLevel,
+          model: model
         })
       });
+      if (result.error) {
+        setAiExplanation(result.error);
+        setAiLoading(false);
+        return;
+      }
       setAiExplanation(result.choices?.[0]?.message?.content || "No analysis available.");
-    } catch (err) { 
+    } catch (err) {
       console.error("AI Error:", err);
-      setAiExplanation("Coach is unavailable right now."); 
+      setAiExplanation("Coach is unavailable right now.");
     }
     setAiLoading(false);
   };
@@ -100,7 +81,7 @@ const App = () => {
     const suit1 = SUITS[Math.floor(Math.random() * SUITS.length)], suit2 = SUITS[(SUITS.indexOf(suit1) + 1) % 4];
     const r1 = RANKS[r1idx], r2 = RANKS[r2idx];
     const handString = r1idx === r2idx ? r1 + r2 : (r1idx < r2idx ? r1 + r2 : r2 + r1) + (Math.random() > 0.5 ? 's' : 'o');
-    
+
     setCurrentQuestion({ pos: randPos, sit: randSit, limperPos, hand: handString, cards: [{ rank: r1, suit: suit1 }, { rank: r2, suit: suit2 }], correctAction: getHandAction(handString, randPos, randSit) });
     setFeedback(null);
   };
@@ -118,7 +99,7 @@ const App = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 font-sans text-slate-900 dark:text-slate-100 transition-colors">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         <Header view={view} setView={setView} onOpenSettings={() => setIsSettingsOpen(true)} />
 
         {view === 'reference' ? (
@@ -129,12 +110,12 @@ const App = () => {
             </div>
 
             <div className="lg:col-span-8 space-y-6">
-              <HandMatrix 
-                position={position} 
-                situation={situation} 
+              <HandMatrix
+                position={position}
+                situation={situation}
                 onHandSelect={(hand, action) => getAiExplanation(hand, action)}
               />
-              <AiAnalysis 
+              <AiAnalysis
                 selectedHand={selectedHandForAi}
                 position={position}
                 situation={situation}
@@ -144,25 +125,25 @@ const App = () => {
             </div>
           </div>
         ) : (
-          <TrainerTable 
+          <TrainerTable
             currentQuestion={currentQuestion}
             feedback={feedback}
             score={score}
             onAction={handleAction}
             onNextHand={generateQuestion}
             onAskAi={() => {
-                const { hand, correctAction, pos, sit, limperPos } = currentQuestion;
-                // Move back to reference view to show explanation
-                setSituation(sit);
-                setPosition(pos);
-                setView('reference');
-                getAiExplanation(hand, correctAction, pos, sit, limperPos);
+              const { hand, correctAction, pos, sit, limperPos } = currentQuestion;
+              // Move back to reference view to show explanation
+              setSituation(sit);
+              setPosition(pos);
+              setView('reference');
+              getAiExplanation(hand, correctAction, pos, sit, limperPos);
             }}
           />
         )}
       </div>
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
+      <SettingsModal
+        isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         model={model}
         setModel={setModel}
