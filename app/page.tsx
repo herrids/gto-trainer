@@ -39,7 +39,7 @@ const App = () => {
     setAiExplanation("");
 
     try {
-      const result = await fetchWithRetry("/api/ai-analysis", {
+      const response = await fetchWithRetry("/api/ai-analysis", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,6 +55,7 @@ const App = () => {
           model: model
         })
       });
+      const result = await response.json();
       if (result.error) {
         setAiExplanation(result.error);
         setAiLoading(false);
