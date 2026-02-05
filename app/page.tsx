@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PositionSelector } from '@/components/PositionSelector';
 import { ScenarioSelector } from '@/components/ScenarioSelector';
@@ -13,6 +15,15 @@ import { getHandAction } from '@/lib/poker-utils';
 import { fetchWithRetry } from '@/lib/utils';
 
 const App = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
   const [view, setView] = useState('reference');
   const [position, setPosition] = useState('BTN');
   const [situation, setSituation] = useState('RFI');
@@ -96,6 +107,20 @@ const App = () => {
   };
 
   useEffect(() => { if (view === 'game') generateQuestion(); }, [view]);
+
+  // Show loading while checking auth
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Don't render if unauthenticated (will redirect)
+  if (status === 'unauthenticated') {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 font-sans text-slate-900 dark:text-slate-100 transition-colors">

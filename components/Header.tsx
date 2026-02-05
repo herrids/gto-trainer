@@ -1,4 +1,7 @@
-import { Brain, Settings } from 'lucide-react';
+"use client"
+
+import { Brain, Settings, LogOut } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 import { Button } from './ui/button';
 
 interface HeaderProps {
@@ -21,23 +24,34 @@ export const Header = ({ view, setView, onOpenSettings }: HeaderProps) => {
       </div>
       <div className="flex bg-muted p-1 rounded-2xl shadow-inner">
         <Button
-            variant={view === 'reference' ? 'default' : 'ghost'}
-            className="rounded-xl font-bold"
-            onClick={() => setView('reference')}
+          variant={view === 'reference' ? 'default' : 'ghost'}
+          className="rounded-xl font-bold"
+          onClick={() => setView('reference')}
         >
-            Reference
+          Reference
         </Button>
         <Button
-            variant={view === 'game' ? 'default' : 'ghost'}
-            className="rounded-xl font-bold"
-            onClick={() => setView('game')}
+          variant={view === 'game' ? 'default' : 'ghost'}
+          className="rounded-xl font-bold"
+          onClick={() => setView('game')}
         >
-            Trainer
+          Trainer
         </Button>
       </div>
-      <Button variant="outline" size="icon" className="rounded-xl" onClick={onOpenSettings}>
-        <Settings className="w-5 h-5 text-muted-foreground" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon" className="rounded-xl" onClick={onOpenSettings}>
+          <Settings className="w-5 h-5 text-muted-foreground" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-xl"
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          title="Sign out"
+        >
+          <LogOut className="w-5 h-5 text-muted-foreground" />
+        </Button>
+      </div>
     </header>
   );
 };
