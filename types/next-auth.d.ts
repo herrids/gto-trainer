@@ -6,6 +6,7 @@ declare module "next-auth" {
             id: string
             selectedModel: string
             analysisLevel: string
+            language: string
         } & DefaultSession["user"]
     }
 
@@ -13,6 +14,7 @@ declare module "next-auth" {
         id: string
         selectedModel: string
         analysisLevel: string
+        language: string
     }
 }
 
@@ -21,5 +23,6 @@ declare module "next-auth/jwt" {
         id: string
         selectedModel: string
         analysisLevel: string
+        language: string
     }
 }

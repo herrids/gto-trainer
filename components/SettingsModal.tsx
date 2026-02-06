@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (model: string, level: string) => void;
+  onSave: (model: string, level: string, language: string) => void;
   initialModel: string;
   initialAnalysisLevel: string;
 }
@@ -18,17 +18,20 @@ export const SettingsModal = ({
   onSave,
   initialModel,
   initialAnalysisLevel,
-}: SettingsModalProps) => {
+  initialLanguage,
+}: SettingsModalProps & { initialLanguage: string }) => {
   const [localModel, setLocalModel] = useState(initialModel);
   const [localLevel, setLocalLevel] = useState(initialAnalysisLevel);
+  const [localLanguage, setLocalLanguage] = useState(initialLanguage);
 
   // Sync with initial values when modal opens
   useEffect(() => {
     if (isOpen) {
       setLocalModel(initialModel);
       setLocalLevel(initialAnalysisLevel);
+      setLocalLanguage(initialLanguage);
     }
-  }, [isOpen, initialModel, initialAnalysisLevel]);
+  }, [isOpen, initialModel, initialAnalysisLevel, initialLanguage]);
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -58,9 +61,33 @@ export const SettingsModal = ({
                         <option value="moonshotai/kimi-k2.5">Moonshot Kimi k2.5</option>
                         <option value="deepseek/deepseek-v3.2">DeepSeek V3.2</option>
                     </select>
-                    <p className="text-[10px] text-muted-foreground">
-                        Select the AI model used for generating strategy explanations.
-                    </p>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                    <label className="text-xs font-black uppercase text-muted-foreground tracking-widest">Language</label>
+                    <div className="flex items-center justify-between bg-muted/50 p-3 rounded-xl border">
+                        <span className="font-medium text-sm">
+                            {localLanguage === 'english' ? 'English' : 'German'}
+                        </span>
+                        <div className="flex bg-background rounded-lg border p-1">
+                             <Button 
+                                size="sm" 
+                                variant={localLanguage === 'english' ? 'default' : 'ghost'} 
+                                onClick={() => setLocalLanguage('english')}
+                                className="h-7 text-xs"
+                            >
+                                English
+                            </Button>
+                             <Button 
+                                size="sm" 
+                                variant={localLanguage === 'german' ? 'default' : 'ghost'} 
+                                onClick={() => setLocalLanguage('german')}
+                                className="h-7 text-xs"
+                            >
+                                German
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="space-y-3 pt-2">
@@ -92,7 +119,7 @@ export const SettingsModal = ({
             </div>
 
             <div className="pt-2">
-                <Button className="w-full font-bold" onClick={() => onSave(localModel, localLevel)}>
+                <Button className="w-full font-bold" onClick={() => onSave(localModel, localLevel, localLanguage)}>
                     Save Changes
                 </Button>
             </div>

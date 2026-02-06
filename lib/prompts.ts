@@ -15,6 +15,7 @@ export interface AnalysisPromptParams {
     situationLabel: string;
     actionLabel: string;
     analysisLevel: string;
+    language?: string;
 }
 
 export const generateAnalysisPrompt = ({
@@ -23,9 +24,10 @@ export const generateAnalysisPrompt = ({
     situationLabel,
     actionLabel,
     analysisLevel,
+    language = "english",
 }: AnalysisPromptParams): string => {
     return `Coach, I need a breakdown of a specific preflop spot. 
-
+    
 **Context:**
 - **Hand:** ${hand}
 - **My Position:** ${positionName}
@@ -36,5 +38,8 @@ export const generateAnalysisPrompt = ({
 **Your Task:**
 Explain why ${hand} is a ${actionLabel} in this spot. Break down how this hand fits into my overall range for the ${positionName} position and why ${situationLabel} dictates this specific move. 
 
-If this is a "Facing Limpers" scenario, explain the importance of 'ISO' (isolation) sizing and why we don't want to let them see a cheap flop. If it's an RFI, explain our stealing vs. value requirements.`;
+If this is a "Facing Limpers" scenario, explain the importance of 'ISO' (isolation) sizing and why we don't want to let them see a cheap flop. If it's an RFI, explain our stealing vs. value requirements.
+
+**Language:**
+Please provide your entire response in **${language}**.`;
 };

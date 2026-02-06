@@ -6,19 +6,20 @@ export async function POST(request: Request) {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
-    return NextResponse.json({ 
-      error: "Server Configuration Error: OPENROUTER_API_KEY is not set." 
+    return NextResponse.json({
+      error: "Server Configuration Error: OPENROUTER_API_KEY is not set."
     }, { status: 500 });
   }
 
   try {
-    const { 
-      hand, 
-      positionName, 
-      situationLabel, 
-      actionLabel, 
-      analysisLevel, 
-      model 
+    const {
+      hand,
+      positionName,
+      situationLabel,
+      actionLabel,
+      analysisLevel,
+      model,
+      language
     } = await request.json();
 
     const prompt = generateAnalysisPrompt({
@@ -26,7 +27,8 @@ export async function POST(request: Request) {
       positionName,
       situationLabel,
       actionLabel,
-      analysisLevel
+      analysisLevel,
+      language
     });
 
     const headers: Record<string, string> = {
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
     const openRouterResponse = await fetchWithRetry("https://openrouter.ai/api/v1/chat/completions", {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         model: model,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -65,9 +67,9 @@ export async function POST(request: Request) {
     if (!openRouterResponse.ok) {
       const errorData = await openRouterResponse.json();
       console.error("OpenRouter API Error:", errorData);
-      return NextResponse.json({ 
-        error: `OpenRouter API error: ${openRouterResponse.statusText}`, 
-        details: errorData 
+      return NextResponse.json({
+        error: `OpenRouter API error: ${openRouterResponse.statusText}`,
+        details: errorData
       }, { status: openRouterResponse.status });
     }
 
@@ -76,9 +78,9 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error("API Route Error:", error);
-    return NextResponse.json({ 
-      error: "Failed to fetch AI explanation.", 
-      details: (error as Error).message 
+    return NextResponse.json({
+      error: "Failed to fetch AI explanation.",
+      details: (error as Error).message
     }, { status: 500 });
   }
 }

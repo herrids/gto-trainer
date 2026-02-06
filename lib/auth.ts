@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
                     name: user.name,
                     selectedModel: user.selectedModel,
                     analysisLevel: user.analysisLevel,
+                    language: user.language,
                 }
             }
         })
@@ -56,6 +57,7 @@ export const authOptions: NextAuthOptions = {
                 token.id = user.id
                 token.selectedModel = user.selectedModel
                 token.analysisLevel = user.analysisLevel
+                token.language = user.language
             }
 
             // Update session
@@ -63,6 +65,7 @@ export const authOptions: NextAuthOptions = {
                 if (session?.user) {
                     token.selectedModel = session.user.selectedModel
                     token.analysisLevel = session.user.analysisLevel
+                    token.language = session.user.language
                 }
             }
 
@@ -73,6 +76,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string
                 session.user.selectedModel = token.selectedModel as string
                 session.user.analysisLevel = token.analysisLevel as string
+                session.user.language = token.language as string
             }
             return session
         },

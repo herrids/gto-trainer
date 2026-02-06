@@ -11,18 +11,20 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { selectedModel, analysisLevel } = await req.json();
+        const { selectedModel, analysisLevel, language } = await req.json();
 
         const updatedUser = await prisma.user.update({
             where: { id: session.user.id },
             data: {
                 selectedModel,
                 analysisLevel,
+                language,
             },
         });
         return NextResponse.json({
             selectedModel: updatedUser.selectedModel,
             analysisLevel: updatedUser.analysisLevel,
+            language: updatedUser.language,
         });
     } catch (error) {
         console.error("Error updating user settings:", error);

@@ -33,6 +33,7 @@ const App = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [analysisLevel, setAnalysisLevel] = useState('beginner');
   const [model, setModel] = useState("google/gemini-3-flash-preview");
+  const [language, setLanguage] = useState("english");
 
   const [isInitialized, setIsInitialized] = useState(false);
   // Sync settings from session only once on initial load
@@ -40,15 +41,17 @@ const App = () => {
     if (status === 'authenticated' && session?.user && !isInitialized) {
       if (session.user.analysisLevel) setAnalysisLevel(session.user.analysisLevel);
       if (session.user.selectedModel) setModel(session.user.selectedModel);
+      if (session.user.language) setLanguage(session.user.language);
       setIsInitialized(true);
     }
   }, [status, session, isInitialized]);
 
-  const handleSaveSettings = async (newModel: string, newLevel: string) => {
+  const handleSaveSettings = async (newModel: string, newLevel: string, newLanguage: string) => {
     setIsSettingsOpen(false);
     // Optimistically update local state
     setModel(newModel);
     setAnalysisLevel(newLevel);
+    setLanguage(newLanguage);
     
     try {
       const response = await fetch("/api/user/settings", {
@@ -57,6 +60,7 @@ const App = () => {
         body: JSON.stringify({
           selectedModel: newModel,
           analysisLevel: newLevel,
+          language: newLanguage,
         }),
       });
       
@@ -68,6 +72,7 @@ const App = () => {
             ...session?.user,
             selectedModel: newModel,
             analysisLevel: newLevel,
+            language: newLanguage,
           }
         };
         await update(newSession);
@@ -106,7 +111,8 @@ const App = () => {
           situationLabel: effectiveSit,
           actionLabel: actionValue,
           analysisLevel: analysisLevel,
-          model: model
+          model: model,
+          language: language
         })
       });
       const result = await response.json();
@@ -217,6 +223,7 @@ const App = () => {
         onSave={handleSaveSettings}
         initialModel={model}
         initialAnalysisLevel={analysisLevel}
+        initialLanguage={language}
       />
     </div>
   );

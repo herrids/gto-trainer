@@ -22,4 +22,5 @@ model User {
   updatedAt      DateTime @updatedAt
   selectedModel  String   @default("google/gemini-3-flash-preview")
   analysisLevel  String   @default("beginner")
+  language       String   @default("english")
 }
