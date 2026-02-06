@@ -15,7 +15,7 @@ import { getHandAction } from '@/lib/poker-utils';
 import { fetchWithRetry } from '@/lib/utils';
 
 const App = () => {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -33,6 +33,49 @@ const App = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [analysisLevel, setAnalysisLevel] = useState('beginner');
   const [model, setModel] = useState("google/gemini-3-flash-preview");
+
+  const [isInitialized, setIsInitialized] = useState(false);
+  // Sync settings from session only once on initial load
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user && !isInitialized) {
+      if (session.user.analysisLevel) setAnalysisLevel(session.user.analysisLevel);
+      if (session.user.selectedModel) setModel(session.user.selectedModel);
+      setIsInitialized(true);
+    }
+  }, [status, session, isInitialized]);
+
+  const handleSaveSettings = async (newModel: string, newLevel: string) => {
+    setIsSettingsOpen(false);
+    // Optimistically update local state
+    setModel(newModel);
+    setAnalysisLevel(newLevel);
+    
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selectedModel: newModel,
+          analysisLevel: newLevel,
+        }),
+      });
+      
+      if (response.ok) {
+        // Refresh session data client-side
+        const newSession = {
+          ...session,
+          user: {
+            ...session?.user,
+            selectedModel: newModel,
+            analysisLevel: newLevel,
+          }
+        };
+        await update(newSession);
+      }
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+    }
+  };
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiExplanation, setAiExplanation] = useState("");
@@ -171,10 +214,9 @@ const App = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        model={model}
-        setModel={setModel}
-        analysisLevel={analysisLevel}
-        setAnalysisLevel={setAnalysisLevel}
+        onSave={handleSaveSettings}
+        initialModel={model}
+        initialAnalysisLevel={analysisLevel}
       />
     </div>
   );

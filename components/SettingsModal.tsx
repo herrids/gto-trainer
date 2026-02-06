@@ -1,25 +1,35 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  model: string;
-  setModel: (model: string) => void;
-  analysisLevel: string;
-  setAnalysisLevel: (level: string) => void;
+  onSave: (model: string, level: string) => void;
+  initialModel: string;
+  initialAnalysisLevel: string;
 }
 
 export const SettingsModal = ({
   isOpen,
   onClose,
-  model,
-  setModel,
-  analysisLevel,
-  setAnalysisLevel,
+  onSave,
+  initialModel,
+  initialAnalysisLevel,
 }: SettingsModalProps) => {
+  const [localModel, setLocalModel] = useState(initialModel);
+  const [localLevel, setLocalLevel] = useState(initialAnalysisLevel);
+
+  // Sync with initial values when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setLocalModel(initialModel);
+      setLocalLevel(initialAnalysisLevel);
+    }
+  }, [isOpen, initialModel, initialAnalysisLevel]);
+
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="w-full max-w-md bg-background border rounded-2xl shadow-xl p-6 space-y-6 animate-in zoom-in-95 duration-200">
@@ -34,8 +44,8 @@ export const SettingsModal = ({
                 <div className="space-y-2">
                     <label className="text-xs font-black uppercase text-muted-foreground tracking-widest">AI Model</label>
                     <select 
-                        value={model} 
-                        onChange={(e) => setModel(e.target.value)}
+                        value={localModel} 
+                        onChange={(e) => setLocalModel(e.target.value)}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <option value="google/gemini-3-flash-preview">Gemini 3 Flash Preview</option>
@@ -57,21 +67,21 @@ export const SettingsModal = ({
                     <label className="text-xs font-black uppercase text-muted-foreground tracking-widest">Expertise Level</label>
                     <div className="flex items-center justify-between bg-muted/50 p-3 rounded-xl border">
                         <span className="font-medium text-sm">
-                            {analysisLevel === 'beginner' ? 'Beginner Mode' : 'Expert Mode'}
+                            {localLevel === 'beginner' ? 'Beginner Mode' : 'Expert Mode'}
                         </span>
                         <div className="flex bg-background rounded-lg border p-1">
                              <Button 
                                 size="sm" 
-                                variant={analysisLevel === 'beginner' ? 'default' : 'ghost'} 
-                                onClick={() => setAnalysisLevel('beginner')}
+                                variant={localLevel === 'beginner' ? 'default' : 'ghost'} 
+                                onClick={() => setLocalLevel('beginner')}
                                 className="h-7 text-xs"
                             >
                                 Beginner
                             </Button>
                              <Button 
                                 size="sm" 
-                                variant={analysisLevel === 'pro' ? 'default' : 'ghost'} 
-                                onClick={() => setAnalysisLevel('pro')}
+                                variant={localLevel === 'pro' ? 'default' : 'ghost'} 
+                                onClick={() => setLocalLevel('pro')}
                                 className="h-7 text-xs"
                             >
                                 Expert
@@ -82,7 +92,7 @@ export const SettingsModal = ({
             </div>
 
             <div className="pt-2">
-                <Button className="w-full font-bold" onClick={onClose}>
+                <Button className="w-full font-bold" onClick={() => onSave(localModel, localLevel)}>
                     Save Changes
                 </Button>
             </div>

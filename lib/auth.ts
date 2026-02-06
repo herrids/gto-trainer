@@ -37,6 +37,8 @@ export const authOptions: NextAuthOptions = {
                     id: user.id,
                     email: user.email,
                     name: user.name,
+                    selectedModel: user.selectedModel,
+                    analysisLevel: user.analysisLevel,
                 }
             }
         })
@@ -48,15 +50,29 @@ export const authOptions: NextAuthOptions = {
         signIn: "/login",
     },
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
+            // Initial sign in
             if (user) {
                 token.id = user.id
+                token.selectedModel = user.selectedModel
+                token.analysisLevel = user.analysisLevel
             }
+
+            // Update session
+            if (trigger === "update") {
+                if (session?.user) {
+                    token.selectedModel = session.user.selectedModel
+                    token.analysisLevel = session.user.analysisLevel
+                }
+            }
+
             return token
         },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string
+                session.user.selectedModel = token.selectedModel as string
+                session.user.analysisLevel = token.analysisLevel as string
             }
             return session
         },
