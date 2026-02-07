@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 interface ScenarioSelectorProps {
   situation: string;
   setSituation: (sit: string) => void;
+  position: string;
 }
 
-export const ScenarioSelector = ({ situation, setSituation }: ScenarioSelectorProps) => {
+export const ScenarioSelector = ({ situation, setSituation, position }: ScenarioSelectorProps) => {
   const scenarios = [
     { id: 'RFI', label: 'Raise First In', sub: 'Unopened pot' },
     { id: 'LIMPERS', label: 'Facing Limpers', sub: 'Isolation Opportunity' },
@@ -23,20 +24,27 @@ export const ScenarioSelector = ({ situation, setSituation }: ScenarioSelectorPr
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {scenarios.map((sit) => (
-          <Button
-            key={sit.id}
-            onClick={() => setSituation(sit.id)}
-            variant={situation === sit.id ? 'default' : 'outline'}
-            className={cn(
-                "w-full h-auto p-4 justify-start text-left border-2 block",
-                situation === sit.id ? "" : "hover:border-slate-300"
-            )}
-          >
-            <div className="font-black text-sm uppercase">{sit.label}</div>
-            <div className="text-[10px] opacity-70 font-medium whitespace-normal">{sit.sub}</div>
-          </Button>
-        ))}
+        {scenarios.map((sit) => {
+          const isDisabled = 
+            (sit.id === 'LIMPERS' && position === 'UTG') ||
+            (sit.id === 'RFI' && position === 'BB');
+          
+          return (
+            <Button
+              key={sit.id}
+              onClick={() => setSituation(sit.id)}
+              disabled={isDisabled}
+              variant={situation === sit.id ? 'default' : 'outline'}
+              className={cn(
+                  "w-full h-auto p-4 justify-start text-left border-2 block",
+                  situation === sit.id ? "" : "hover:border-slate-300"
+              )}
+            >
+              <div className="font-black text-sm uppercase">{sit.label}</div>
+              <div className="text-[10px] opacity-70 font-medium whitespace-normal">{sit.sub}</div>
+            </Button>
+          );
+        })}
       </CardContent>
     </Card>
   );

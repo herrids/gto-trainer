@@ -43,8 +43,28 @@ const App = () => {
       if (session.user.selectedModel) setModel(session.user.selectedModel);
       if (session.user.language) setLanguage(session.user.language);
       setIsInitialized(true);
+      
+      // Fetch user stats
+      fetch('/api/user/stats')
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data.handsPlayed === 'number') {
+            setScore({ correct: data.correctHands, total: data.handsPlayed });
+          }
+        })
+        .catch(err => console.error("Failed to fetch stats:", err));
     }
   }, [status, session, isInitialized]);
+
+  // Ensure valid situation when switching positions
+  useEffect(() => {
+    if (position === 'UTG' && situation === 'LIMPERS') {
+      setSituation('RFI');
+    }
+    if (position === 'BB' && situation === 'RFI') {
+      setSituation('FACING');
+    }
+  }, [position, situation]);
 
   const handleSaveSettings = async (newModel: string, newLevel: string, newLanguage: string) => {
     setIsSettingsOpen(false);
@@ -147,12 +167,33 @@ const App = () => {
     setFeedback(null);
   };
 
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
     if (feedback) return;
     const playerAction = (action === 'raise' && currentQuestion.sit === 'FACING') ? '3bet' : action;
     const isCorrect = playerAction === currentQuestion.correctAction;
     setScore(s => ({ correct: s.correct + (isCorrect ? 1 : 0), total: s.total + 1 }));
     setFeedback({ isCorrect, correctAction: currentQuestion.correctAction });
+
+    // Save stats
+    try {
+      await fetch('/api/user/stats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isCorrect,
+          hand: currentQuestion.hand,
+          position: currentQuestion.pos,
+          situation: currentQuestion.sit,
+          limperPos: currentQuestion.limperPos,
+          action: playerAction,
+          correctAction: currentQuestion.correctAction
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to update stats:", err);
+    }
   };
 
   useEffect(() => { if (view === 'game') generateQuestion(); }, [view]);
@@ -181,7 +222,7 @@ const App = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
               <PositionSelector position={position} setPosition={setPosition} />
-              <ScenarioSelector situation={situation} setSituation={setSituation} />
+              <ScenarioSelector position={position} situation={situation} setSituation={setSituation} />
             </div>
 
             <div className="lg:col-span-8 space-y-6">

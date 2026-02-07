@@ -23,4 +23,19 @@ model User {
   selectedModel  String   @default("google/gemini-3-flash-preview")
   analysisLevel  String   @default("beginner")
   language       String   @default("english")
+  playedHands    PlayedHand[]
+}
+
+model PlayedHand {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  hand          String
+  position      String
+  situation     String
+  limperPos     String?
+  action        String
+  isCorrect     Boolean
+  correctAction String
+  createdAt     DateTime @default(now())
 }

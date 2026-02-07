@@ -31,7 +31,7 @@ export const TrainerTable = ({
         {currentQuestion && (
           <Card className="absolute -top-16 left-1/2 -translate-x-1/2 px-6 py-2 rounded-2xl shadow-2xl flex items-center gap-6 z-50">
              <div className="text-center">
-              <span className="text-[8px] uppercase font-black text-muted-foreground block tracking-tighter">Session Accuracy</span>
+              <span className="text-[8px] uppercase font-black text-muted-foreground block tracking-tighter">Accuracy</span>
               <span className="text-xl font-black text-emerald-600">{score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0}%</span>
             </div>
             <div className="h-8 w-px bg-border" />
