@@ -18,6 +18,74 @@ export interface AnalysisPromptParams {
     language?: string;
 }
 
+export const POSTFLOP_SYSTEM_PROMPT = `You are an elite high-stakes Poker Coach reviewing a postflop decision a student just made in a training drill.
+
+**Response format (follow exactly):**
+Line 1: "VERDICT: GOOD" or "VERDICT: OK" or "VERDICT: MISTAKE"
+Line 2: "BEST_ACTION: " followed by a short description of the action you consider best in this spot (e.g. "Bet 66% pot for value and protection").
+Line 3: "---"
+Then, starting on a new line, a markdown explanation of the situation.
+
+**Grading guide:**
+- GOOD: the student's action is a strong, defensible line (it doesn't have to be the single best possible line, just clearly correct in spirit).
+- OK: a reasonable but suboptimal line that isn't a clear mistake.
+- MISTAKE: a line that gives up significant equity/EV or misreads the situation.
+
+**Explanation guidelines:**
+1. Briefly restate the situation (board texture, pot odds, stack depth) in your own words.
+2. Explain what the best action is and why, referencing range advantage, board texture, pot odds/equity, and stack-to-pot ratio as relevant.
+3. Explain concretely why the student's chosen action was right or wrong compared to that.
+4. Tone: professional, encouraging, and authoritative. Use correct terminology (e.g., "range advantage," "SPR," "polarized," "pot odds").
+5. Scale jargon/complexity/detail to the provided analysis level.
+6. Do not repeat the VERDICT/BEST_ACTION lines inside the explanation.`;
+
+export interface PostflopAnalysisPromptParams {
+    heroPos: string;
+    villainPositions: string[];
+    heroCards: string;
+    board: string;
+    street: string;
+    potBB: number;
+    effectiveStackBB: number;
+    actionHistory: string[];
+    heroAction: string;
+    analysisLevel: string;
+    language?: string;
+}
+
+export const generatePostflopAnalysisPrompt = ({
+    heroPos,
+    villainPositions,
+    heroCards,
+    board,
+    street,
+    potBB,
+    effectiveStackBB,
+    actionHistory,
+    heroAction,
+    analysisLevel,
+    language = "english",
+}: PostflopAnalysisPromptParams): string => {
+    return `Coach, please review this postflop decision from a training drill.
+
+**Situation:**
+- **My Position:** ${heroPos}
+- **Opponent(s) still in the hand:** ${villainPositions.join(', ')}
+- **My Hand:** ${heroCards}
+- **Board (${street}):** ${board}
+- **Pot Size:** ${potBB}bb
+- **My Effective Stack:** ${effectiveStackBB}bb
+- **Action so far:** ${actionHistory.join(' | ')}
+- **My Decision:** ${heroAction}
+- **Analysis Depth:** ${analysisLevel}
+
+**Your Task:**
+Grade my decision using the required VERDICT/BEST_ACTION/--- format, then explain the situation and why the best action is correct, and why my decision was right or wrong relative to it.
+
+**Language:**
+Please provide your entire response in **${language}**.`;
+};
+
 export const generateAnalysisPrompt = ({
     hand,
     positionName,

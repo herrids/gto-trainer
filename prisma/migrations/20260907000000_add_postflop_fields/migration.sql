@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "PlayedHand" ADD COLUMN     "board" TEXT,
+ADD COLUMN     "mode" TEXT NOT NULL DEFAULT 'preflop',
+ADD COLUMN     "potBB" DOUBLE PRECISION,
+ADD COLUMN     "stackBB" DOUBLE PRECISION,
+ADD COLUMN     "street" TEXT;

@@ -44,11 +44,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { isCorrect, hand, position, situation, limperPos, action, correctAction } = await req.json();
+        const { isCorrect, hand, position, situation, limperPos, action, correctAction, mode, street, board, potBB, stackBB } = await req.json();
 
         await prisma.playedHand.create({
             data: {
                 userId: session.user.id,
+                mode: mode || 'preflop',
                 hand,
                 position,
                 situation,
@@ -56,6 +57,10 @@ export async function POST(req: Request) {
                 action,
                 isCorrect,
                 correctAction,
+                street,
+                board,
+                potBB,
+                stackBB,
             }
         });
 
