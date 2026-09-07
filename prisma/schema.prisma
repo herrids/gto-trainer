@@ -30,6 +30,7 @@ model PlayedHand {
   id            String   @id @default(cuid())
   userId        String
   user          User     @relation(fields: [userId], references: [id])
+  mode          String   @default("preflop")
   hand          String
   position      String
   situation     String
@@ -37,5 +38,9 @@ model PlayedHand {
   action        String
   isCorrect     Boolean
   correctAction String
+  street        String?
+  board         String?
+  potBB         Float?
+  stackBB       Float?
   createdAt     DateTime @default(now())
 }

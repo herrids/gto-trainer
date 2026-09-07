@@ -10,9 +10,11 @@ import { HandMatrix } from '@/components/HandMatrix';
 import { AiAnalysis } from '@/components/AiAnalysis';
 import { SettingsModal } from '@/components/SettingsModal';
 import { TrainerTable } from '@/components/TrainerTable';
+import { PostflopTable } from '@/components/PostflopTable';
 import { POS_ORDER, POSITION_NAMES, RANKS, SUITS } from '@/lib/poker-data';
-import { getHandAction } from '@/lib/poker-utils';
+import { getHandAction, generatePostflopScenario, parsePostflopVerdict } from '@/lib/poker-utils';
 import { fetchWithRetry } from '@/lib/utils';
+import type { PostflopAction, PostflopScenario, PostflopVerdict } from '@/types/poker';
 
 const App = () => {
   const { data: session, status, update } = useSession();
@@ -109,6 +111,12 @@ const App = () => {
   const [feedback, setFeedback] = useState<any>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
 
+  const [trainerMode, setTrainerMode] = useState<'preflop' | 'postflop'>('preflop');
+  const [postflopQuestion, setPostflopQuestion] = useState<PostflopScenario | null>(null);
+  const [postflopHeroAction, setPostflopHeroAction] = useState<string | null>(null);
+  const [postflopVerdict, setPostflopVerdict] = useState<PostflopVerdict | null>(null);
+  const [postflopAiLoading, setPostflopAiLoading] = useState(false);
+
   const getAiExplanation = async (handValue: string, actionValue: string, contextPos?: string, contextSit?: string, contextLimperPos?: string) => {
     const effectivePos = contextPos || position;
     const effectiveSit = contextSit || situation;
@@ -196,7 +204,91 @@ const App = () => {
     }
   };
 
-  useEffect(() => { if (view === 'game') generateQuestion(); }, [view]);
+  const generatePostflopQuestion = () => {
+    setPostflopQuestion(generatePostflopScenario());
+    setPostflopHeroAction(null);
+    setPostflopVerdict(null);
+  };
+
+  const handlePostflopDecision = async (actionType: PostflopAction, label: string) => {
+    if (!postflopQuestion || postflopHeroAction) return;
+    setPostflopHeroAction(label);
+    setPostflopAiLoading(true);
+    setPostflopVerdict(null);
+
+    const heroCardsStr = postflopQuestion.heroCards.map(c => `${c.rank}${c.suit}`).join(' ');
+    const boardStr = postflopQuestion.board.map(c => `${c.rank}${c.suit}`).join(' ');
+
+    try {
+      const response = await fetchWithRetry("/api/postflop-analysis", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
+          'X-Title': 'GTO Trainer'
+        },
+        body: JSON.stringify({
+          heroPos: postflopQuestion.heroPos,
+          villainPositions: postflopQuestion.villainPositions,
+          heroCards: heroCardsStr,
+          board: boardStr,
+          street: postflopQuestion.street,
+          potBB: postflopQuestion.potBB,
+          effectiveStackBB: postflopQuestion.effectiveStackBB,
+          actionHistory: postflopQuestion.actionHistory,
+          heroAction: label,
+          analysisLevel,
+          model,
+          language
+        })
+      });
+      const result = await response.json();
+      let verdict: PostflopVerdict;
+      if (result.error) {
+        verdict = { verdict: null, bestAction: null, explanation: result.error };
+      } else {
+        const raw = result.choices?.[0]?.message?.content || '';
+        verdict = parsePostflopVerdict(raw);
+      }
+      setPostflopVerdict(verdict);
+      setPostflopAiLoading(false);
+
+      const isCorrect = verdict.verdict === 'GOOD';
+      setScore(s => ({ correct: s.correct + (isCorrect ? 1 : 0), total: s.total + 1 }));
+
+      try {
+        await fetch('/api/user/stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'postflop',
+            isCorrect,
+            hand: heroCardsStr,
+            position: postflopQuestion.heroPos,
+            situation: 'POSTFLOP',
+            action: label,
+            correctAction: verdict.bestAction || 'unknown',
+            street: postflopQuestion.street,
+            board: boardStr,
+            potBB: postflopQuestion.potBB,
+            stackBB: postflopQuestion.effectiveStackBB,
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to update stats:", err);
+      }
+    } catch (err) {
+      console.error("Postflop AI Error:", err);
+      setPostflopVerdict({ verdict: null, bestAction: null, explanation: "Coach is unavailable right now." });
+      setPostflopAiLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (view !== 'game') return;
+    if (trainerMode === 'preflop') generateQuestion();
+    else generatePostflopQuestion();
+  }, [view, trainerMode]);
 
   // Show loading while checking auth
   if (status === 'loading') {
@@ -241,21 +333,52 @@ const App = () => {
             </div>
           </div>
         ) : (
-          <TrainerTable
-            currentQuestion={currentQuestion}
-            feedback={feedback}
-            score={score}
-            onAction={handleAction}
-            onNextHand={generateQuestion}
-            onAskAi={() => {
-              const { hand, correctAction, pos, sit, limperPos } = currentQuestion;
-              // Move back to reference view to show explanation
-              setSituation(sit);
-              setPosition(pos);
-              setView('reference');
-              getAiExplanation(hand, correctAction, pos, sit, limperPos);
-            }}
-          />
+          <div className="space-y-6">
+            <div className="flex justify-center">
+              <div className="flex bg-muted p-1 rounded-2xl shadow-inner">
+                <button
+                  onClick={() => setTrainerMode('preflop')}
+                  className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-colors ${trainerMode === 'preflop' ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground'}`}
+                >
+                  Preflop
+                </button>
+                <button
+                  onClick={() => setTrainerMode('postflop')}
+                  className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-colors ${trainerMode === 'postflop' ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground'}`}
+                >
+                  Postflop
+                </button>
+              </div>
+            </div>
+
+            {trainerMode === 'preflop' ? (
+              <TrainerTable
+                currentQuestion={currentQuestion}
+                feedback={feedback}
+                score={score}
+                onAction={handleAction}
+                onNextHand={generateQuestion}
+                onAskAi={() => {
+                  const { hand, correctAction, pos, sit, limperPos } = currentQuestion;
+                  // Move back to reference view to show explanation
+                  setSituation(sit);
+                  setPosition(pos);
+                  setView('reference');
+                  getAiExplanation(hand, correctAction, pos, sit, limperPos);
+                }}
+              />
+            ) : (
+              <PostflopTable
+                scenario={postflopQuestion}
+                verdict={postflopVerdict}
+                aiLoading={postflopAiLoading}
+                heroActionLabel={postflopHeroAction}
+                score={score}
+                onDecide={handlePostflopDecision}
+                onNextHand={generatePostflopQuestion}
+              />
+            )}
+          </div>
         )}
       </div>
       <SettingsModal
